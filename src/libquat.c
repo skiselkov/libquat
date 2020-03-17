@@ -43,7 +43,7 @@ quat_hamil_prod(struct quat p, struct quat q)
  * `ref_time'.
  */
 struct quat
-quat_local2ecmi(geo_pos2_t refpt, double ref_time)
+quat_local2ecmigl(geo_pos2_t refpt, double ref_time)
 {
 	struct quat lat_q, lon_q, out_q;
 
@@ -62,13 +62,13 @@ quat_local2ecmi(geo_pos2_t refpt, double ref_time)
  * OpenGL local coordinates.
  */
 struct quat
-quat_ecmi2local(geo_pos2_t refpt, double ref_time)
+quat_ecmigl2local(geo_pos2_t refpt, double ref_time)
 {
 	struct quat q, q_inv;
 
 	ASSERT(isfinite(ref_time));
 	ASSERT(!IS_NULL_GEO_POS(refpt));
-	q = quat_local2ecmi(refpt, ref_time);
+	q = quat_local2ecmigl(refpt, ref_time);
 	quat_inverse(q_inv.v, q.v);
 
 	return (q_inv);
@@ -140,12 +140,18 @@ quat_from_euler(double psi, double theta, double phi)
 	ASSERT(isfinite(psi));
 	ASSERT(isfinite(theta));
 	ASSERT(isfinite(phi));
-	q.w = cos_phi * cos_theta * cos_psi + sin_phi * sin_theta * sin_psi;
-	q.x = sin_phi * cos_theta * cos_psi - cos_phi * sin_theta * sin_psi;
-	q.y = cos_phi * sin_theta * cos_psi + sin_phi * cos_theta * sin_psi;
-	q.z = cos_phi * cos_theta * sin_psi - sin_phi * sin_theta * cos_psi;
+	q.w =  cos_psi * cos_theta * cos_phi + sin_psi * sin_theta * sin_phi;
+	q.x =  cos_psi * cos_theta * sin_phi - sin_psi * sin_theta * cos_phi;
+	q.y =  cos_psi * sin_theta * cos_phi + sin_psi * cos_theta * sin_phi;
+	q.z = -cos_psi * sin_theta * sin_phi + sin_psi * cos_theta * cos_phi;
 
 	return (q);
+}
+
+struct quat
+quat_from_euler_deg(double psi, double theta, double phi)
+{
+	return (quat_from_euler(DEG2RAD(psi), DEG2RAD(theta), DEG2RAD(phi)));
 }
 
 void
@@ -157,38 +163,48 @@ quat_to_euler(struct quat q, double *psi, double *theta, double *phi)
 	double sq_z = q.z * q.z;
 
 	ASSERT(!IS_NULL_QUAT(q));
-	*psi = atan2(2.0 * (q.x * q.y + q.z * q.w),
-	    (sq_x - sq_y - sq_z + sq_w));
-	*theta = asin(-2.0 * (q.x * q.z - q.y * q.w));
-	*phi = atan2(2.0 * (q.y * q.z + q.x * q.w),
-	    (-sq_x - sq_y + sq_z + sq_w));
+	if (psi != NULL) {
+		*psi = atan2(2.0 * (q.x * q.y + q.z * q.w),
+		    (sq_x - sq_y - sq_z + sq_w));
+	}
+	if (theta != NULL)
+		*theta = asin(-2.0 * (q.x * q.z - q.y * q.w));
+	if (phi != NULL) {
+		*phi = atan2(2.0 * (q.y * q.z + q.x * q.w),
+		    (-sq_x - sq_y + sq_z + sq_w));
+	}
 }
 
-/*
- * Converts a vect3_t in OpenGL space to a quaternion suitable for
- * transformation using Hamilton products.
- */
-struct quat
-quat_from_vect3_gl(vect3_t v)
+void
+quat_to_euler_deg(struct quat q, double *psi, double *theta, double *phi)
 {
-	struct quat q;
-	quat(q.v, -v.z, v.x, -v.y, 0);
+	quat_to_euler(q, psi, theta, phi);
+	if (psi != NULL)
+		*psi = RAD2DEG(*psi);
+	if (theta != NULL)
+		*theta = RAD2DEG(*theta);
+	if (phi != NULL)
+		*phi = RAD2DEG(*phi);
+}
+
+struct quat
+quat_from_xp(struct quat xp_q)
+{
+	struct quat q = { .v = { xp_q.v[1], xp_q.v[2], xp_q.v[3], xp_q.v[0] } };
 	return (q);
 }
 
-/*
- * Converts a quat back to a vect3_t in OpenGL space.
- */
-vect3_t
-quat_to_vect3_gl(struct quat q)
+struct quat
+quat_to_xp(struct quat q)
 {
-	return (VECT3(q.x, -q.z, -q.y));
+	struct quat xp_q = { .v = { q.v[3], q.v[0], q.v[1], q.v[2] } };
+	return (xp_q);
 }
 
 void
 quat_print(struct quat q)
 {
-	printf("%11f %11f %11f %11f\n", q.w, q.x, q.y, q.z);
+	printf(".w=%11f .x=%11f .y=%11f .z=%11f\n", q.w, q.x, q.y, q.z);
 }
 
 void
