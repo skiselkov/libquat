@@ -119,14 +119,19 @@ quat_to_axis_angle(struct quat q, struct vec3 *axis, double *angle)
 	 * Zero roration quaternion has an arbitrary axis, so just pick one.
 	 */
 	if (s == 0) {
-		*axis = QUAT_AXIS_X;
-		*angle = 0;
+		if (axis != NULL)
+			*axis = QUAT_AXIS_X;
+		if (angle != NULL)
+			*angle = 0;
 		return;
 	}
-	axis->x = q.x / s;
-	axis->y = q.y / s;
-	axis->z = q.z / s;
-	*angle = 2 * half;
+	if (axis != NULL) {
+		axis->x = q.x / s;
+		axis->y = q.y / s;
+		axis->z = q.z / s;
+	}
+	if (angle != NULL)
+		*angle = 2 * half;
 }
 
 struct quat
