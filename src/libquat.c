@@ -50,8 +50,32 @@ quat_hamil_prod(struct quat p, struct quat q)
 
 /*
  * Constructs a quaternion to translate from X-Plane OpenGL local coordinates
- * with origin at `refpt' to the Earth-Centered-modified-Inertial frame at
- * `ref_time'.
+ * with origin at `refpt' to the Earth-Centered-modified-Inertial frame in
+ * OpenGL coordinates at `ref_time'.
+ *
+ * X-Plane OpenGL local coordinates are a euclidian coordinate space with
+ * three axes at right angles to each other. The coordinate system origin is
+ * at a given reference latitude/longitude point, at elevation 0 meters
+ * above the Earth ellipsoid. The X axis is parallel with the Earth's surface
+ * at this reference point and increases towards to the east. The Y axis is
+ * perpendicular to the Earth's surface at the reference point and increases
+ * upward. The Z axis is parallel to the Earth's surface and increases to the
+ * south. All coordinates are in meters from the origin point.
+ *
+ * ECmIGL coordinates work as follows. ECmI is a euclidian coordinate space
+ * composed of three axes (X, Y & Z) at right angles to each other. The
+ * origin of the coordinate system is centered on the Earth's geometric
+ * center of rotation. Being an inertial frame, the axes only line up with
+ * certain reference points on the Earth's surface at ref_time=0. Thereafter,
+ * the Earth rotates counter-clockwise in the coordinate system, which the
+ * axes of the coordinate system remain aligned with the fixed background
+ * stars. `ref_time' defines the rotation offset of the Earth in seconds
+ * from the starting orientation.
+ * At `ref_time=0', the X axis goes from the origin through the latitude=0
+ * and longitude=90 degree point on the Earth. The Y axis goes
+ * from the origin to the latitude=90 (north pole) point. The Z axis goes
+ * from the origin to the latitude=0 and longitude=0 point. All coordinates
+ * are in meters from the origin point.
  */
 struct quat
 quat_local2ecmigl(geo_pos2_t refpt, double ref_time)
@@ -60,8 +84,9 @@ quat_local2ecmigl(geo_pos2_t refpt, double ref_time)
 
 	ASSERT(isfinite(ref_time));
 	ASSERT(!IS_NULL_GEO_POS(refpt));
-	quat_from_axis_angle(lat_q.v, QUAT_AXIS_X.v, DEG2RAD(90 - refpt.lat));
-	quat_from_axis_angle(lon_q.v, QUAT_AXIS_Y.v,
+	quat_from_axis_angle(lat_q.v, QUAT_AXIS_X_GL.v,
+	    DEG2RAD(90 - refpt.lat));
+	quat_from_axis_angle(lon_q.v, QUAT_AXIS_Y_GL.v,
 	    DEG2RAD(refpt.lon + EARTH_ROT_RATE * ref_time));
 	quat_multiply(out_q.v, lon_q.v, lat_q.v);
 
@@ -69,8 +94,9 @@ quat_local2ecmigl(geo_pos2_t refpt, double ref_time)
 }
 
 /*
- * Constructs inverse quaternion to translate from ECmI to X-Plane
- * OpenGL local coordinates.
+ * Constructs inverse quaternion to translate from ECmI to X-Plane OpenGL
+ * local coordinates. See quat_local2ecmigl for a description of the
+ * respective coordinate systems.
  */
 struct quat
 quat_ecmigl2local(geo_pos2_t refpt, double ref_time)
@@ -105,7 +131,7 @@ quat_rot_rel(struct quat q1, struct quat q2)
 
 /*
  * Concatenates a relative rotation quaternion `delta' onto `from'.
- * This is equivalent to quaternion multiplication of `delta'.`from'.
+ * This is equivalent to quaternion multiplication of `delta' x `from'.
  */
 struct quat
 quat_rot_concat(struct quat from, struct quat delta)
@@ -119,6 +145,10 @@ quat_rot_concat(struct quat from, struct quat delta)
 	return (to);
 }
 
+/*
+ * Converts a quaternion into an axis + angle (in radians) representation.
+ * For any argument you don't wish to receive, pass NULL.
+ */
 void
 quat_to_axis_angle(struct quat q, struct vec3 *axis, double *angle)
 {
@@ -131,7 +161,7 @@ quat_to_axis_angle(struct quat q, struct vec3 *axis, double *angle)
 	 */
 	if (s == 0) {
 		if (axis != NULL)
-			*axis = QUAT_AXIS_X;
+			*axis = QUAT_AXIS_X_GL;
 		if (angle != NULL)
 			*angle = 0;
 		return;
@@ -145,6 +175,23 @@ quat_to_axis_angle(struct quat q, struct vec3 *axis, double *angle)
 		*angle = 2 * half;
 }
 
+/*
+ * Same as quat_to_axis_angle, but converts the axis into an axis in
+ * OpenGL coordinates.
+ */
+void
+quat_to_axis_gl_angle(struct quat q, struct vec3 *axis, double *angle)
+{
+	ASSERT(!IS_NULL_QUAT(q));
+	quat_to_axis_angle(q, axis, angle);
+	if (axis != NULL)
+		*axis = QUAT_VEC3(axis->y, -axis->z, -axis->x);
+}
+
+/*
+ * Creates a quaternion from a set of Euler angles (yaw, pitch, roll)
+ * in radians.
+ */
 struct quat
 quat_from_euler(double psi, double theta, double phi)
 {
@@ -164,12 +211,21 @@ quat_from_euler(double psi, double theta, double phi)
 	return (q);
 }
 
+/*
+ * Creates a quaternion from a set of Euler angles (yaw, pitch, roll)
+ * in degrees.
+ */
 struct quat
 quat_from_euler_deg(double psi, double theta, double phi)
 {
 	return (quat_from_euler(DEG2RAD(psi), DEG2RAD(theta), DEG2RAD(phi)));
 }
 
+/*
+ * Converts a quaternion into Euler angles (yaw, pitch, roll) in radians.
+ * The pointer output arguments are optional - any that are left NULL are
+ * not populated.
+ */
 void
 quat_to_euler(struct quat q, double *psi, double *theta, double *phi)
 {
@@ -191,6 +247,11 @@ quat_to_euler(struct quat q, double *psi, double *theta, double *phi)
 	}
 }
 
+/*
+ * Converts a quaternion into Euler angles (yaw, pitch, roll) in degrees.
+ * The pointer output arguments are optional - any that are left NULL are
+ * not populated.
+ */
 void
 quat_to_euler_deg(struct quat q, double *psi, double *theta, double *phi)
 {
@@ -203,6 +264,10 @@ quat_to_euler_deg(struct quat q, double *psi, double *theta, double *phi)
 		*phi = RAD2DEG(*phi);
 }
 
+/*
+ * Transforms a quaternion in X-Plane format (W, X, Y, Z) into libquat
+ * internal format (X, Y, Z, W).
+ */
 struct quat
 quat_from_xp(struct quat xp_q)
 {
@@ -210,6 +275,10 @@ quat_from_xp(struct quat xp_q)
 	return (q);
 }
 
+/*
+ * Transforms a quaternion in libquat internal format (X, Y, Z, W) into
+ * the format that X-Plane uses in its rotation quaternion (W, X, Y, Z).
+ */
 struct quat
 quat_to_xp(struct quat q)
 {
@@ -223,6 +292,10 @@ quat_print(struct quat q)
 	printf(".w=%11f .x=%11f .y=%11f .z=%11f\n", q.w, q.x, q.y, q.z);
 }
 
+/*
+ * Debug prints a quaternion transformed into Euler angle space
+ * (yaw, pitch, roll), in degrees.
+ */
 void
 quat_print_euler(struct quat q)
 {
@@ -230,10 +303,14 @@ quat_print_euler(struct quat q)
 
 	ASSERT(!IS_NULL_QUAT(q));
 	quat_to_euler(q, &psi, &theta, &phi);
-	printf("psi: %f  theta: %f  phi: %f\n",
+	logMsg("psi: %f  theta: %f  phi: %f",
 	    RAD2DEG(psi), RAD2DEG(theta), RAD2DEG(phi));
 }
 
+/*
+ * Debug prints a quaternion as an axis + angle. The axis is automatically
+ * translated into OpenGL coordinates.
+ */
 void
 quat_print_axis_angle(struct quat q)
 {
@@ -242,6 +319,6 @@ quat_print_axis_angle(struct quat q)
 
 	ASSERT(!IS_NULL_QUAT(q));
 	quat_to_axis_angle(q, &axis, &angle);
-	printf("%11f %11f %11f %11f deg\n", axis.y, -axis.z, -axis.x,
+	logMsg("%11f %11f %11f %11f deg", axis.y, -axis.z, -axis.x,
 	    RAD2DEG(angle));
 }

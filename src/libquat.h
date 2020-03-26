@@ -33,10 +33,27 @@
 extern "C" {
 #endif
 
+/*
+ * This library makes it easier to use the mathc library quaternion
+ * functions for keeping track of rotations. Internally, libquat uses
+ * the (X, Y, Z, W) quaternion format, which matches the mathc library.
+ * However, X-Plane uses the (W, X, Y, Z) format. To convert between
+ * the two formats, use the "quat_from_xp" and "quat_to_xp" functions.
+ *
+ * Also note that axis assignments in OpenGL space and quaternion space
+ * are different. Use QUAT_AXIS_*_GL to pick out the correct coordinate
+ * to convert into OpenGL vectors. In either case, however, angles are
+ * in right-hand rule (i.e. with the right thumb along the axis, the
+ * fingers are pointing in the direction of positive rotation angles).
+ */
+
 #define	QUAT_VEC3(_x, _y, _z) ((struct vec3){ .x = (_x), .y = (_y), .z = (_z)})
-#define	QUAT_AXIS_X		QUAT_VEC3(0, 1, 0)
-#define	QUAT_AXIS_Y		QUAT_VEC3(0, 0, -1)
-#define	QUAT_AXIS_Z		QUAT_VEC3(-1, 0, 0)
+/*
+ * Unit vectors along the OpenGL X, Y and Z axes in libquat internal format.
+ */
+#define	QUAT_AXIS_X_GL		QUAT_VEC3(0, 1, 0)
+#define	QUAT_AXIS_Y_GL		QUAT_VEC3(0, 0, -1)
+#define	QUAT_AXIS_Z_GL		QUAT_VEC3(-1, 0, 0)
 
 #define	IS_NULL_QUAT(q)		(!isfinite((q).w))
 #define	NULL_QUAT		((struct quat){.v = {NAN, NAN, NAN, NAN}})
@@ -47,6 +64,7 @@ struct quat quat_ecmigl2local(geo_pos2_t refpt, double ref_time);
 struct quat quat_rot_rel(struct quat q1, struct quat q2);
 struct quat quat_rot_concat(struct quat from, struct quat delta);
 void quat_to_axis_angle(struct quat q, struct vec3 *axis, double *angle);
+void quat_to_axis_gl_angle(struct quat q, struct vec3 *axis, double *angle);
 struct quat quat_from_euler(double psi, double theta, double phi);
 struct quat quat_from_euler_deg(double psi, double theta, double phi);
 void quat_to_euler(struct quat q, double *psi, double *theta, double *phi);
