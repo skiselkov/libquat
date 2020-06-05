@@ -30,6 +30,8 @@
 
 #include "libquat.h"
 
+CTASSERT(sizeof (mfloat_t) == sizeof (long double));
+
 /*
  * Calculates the Hamilton product of quaternions `p' and `q':
  * H(p,q) = q.p.q^-1
@@ -78,7 +80,7 @@ quat_hamil_prod(struct quat p, struct quat q)
  * are in meters from the origin point.
  */
 struct quat
-quat_local2ecmigl(geo_pos2_t refpt, double ref_time)
+quat_local2ecmigl(geo_pos2_t refpt, mfloat_t ref_time)
 {
 	struct quat lat_q, lon_q, out_q;
 
@@ -99,7 +101,7 @@ quat_local2ecmigl(geo_pos2_t refpt, double ref_time)
  * respective coordinate systems.
  */
 struct quat
-quat_ecmigl2local(geo_pos2_t refpt, double ref_time)
+quat_ecmigl2local(geo_pos2_t refpt, mfloat_t ref_time)
 {
 	struct quat q, q_inv;
 
@@ -150,10 +152,10 @@ quat_rot_concat(struct quat from, struct quat delta)
  * For any argument you don't wish to receive, pass NULL.
  */
 void
-quat_to_axis_angle(struct quat q, struct vec3 *axis, double *angle)
+quat_to_axis_angle(struct quat q, struct vec3 *axis, mfloat_t *angle)
 {
-	double half = acos(q.w);
-	double s = sin(half);
+	mfloat_t half = acosl(q.w);
+	mfloat_t s = sinl(half);
 
 	ASSERT(!IS_NULL_QUAT(q));
 	/*
@@ -180,7 +182,7 @@ quat_to_axis_angle(struct quat q, struct vec3 *axis, double *angle)
  * OpenGL coordinates.
  */
 void
-quat_to_axis_gl_angle(struct quat q, struct vec3 *axis, double *angle)
+quat_to_axis_gl_angle(struct quat q, struct vec3 *axis, mfloat_t *angle)
 {
 	ASSERT(!IS_NULL_QUAT(q));
 	quat_to_axis_angle(q, axis, angle);
@@ -193,12 +195,12 @@ quat_to_axis_gl_angle(struct quat q, struct vec3 *axis, double *angle)
  * in radians.
  */
 struct quat
-quat_from_euler(double psi, double theta, double phi)
+quat_from_euler(mfloat_t psi, mfloat_t theta, mfloat_t phi)
 {
 	struct quat q;
-	double sin_psi = sin(psi / 2), cos_psi = cos(psi / 2);
-	double sin_theta = sin(theta / 2), cos_theta = cos(theta / 2);
-	double sin_phi = sin(phi / 2), cos_phi = cos(phi / 2);
+	mfloat_t sin_psi = sinl(psi / 2), cos_psi = cosl(psi / 2);
+	mfloat_t sin_theta = sinl(theta / 2), cos_theta = cosl(theta / 2);
+	mfloat_t sin_phi = sinl(phi / 2), cos_phi = cosl(phi / 2);
 
 	ASSERT(isfinite(psi));
 	ASSERT(isfinite(theta));
@@ -216,7 +218,7 @@ quat_from_euler(double psi, double theta, double phi)
  * in degrees.
  */
 struct quat
-quat_from_euler_deg(double psi, double theta, double phi)
+quat_from_euler_deg(mfloat_t psi, mfloat_t theta, mfloat_t phi)
 {
 	return (quat_from_euler(DEG2RAD(psi), DEG2RAD(theta), DEG2RAD(phi)));
 }
@@ -227,22 +229,22 @@ quat_from_euler_deg(double psi, double theta, double phi)
  * not populated.
  */
 void
-quat_to_euler(struct quat q, double *psi, double *theta, double *phi)
+quat_to_euler(struct quat q, mfloat_t *psi, mfloat_t *theta, mfloat_t *phi)
 {
-	double sq_w = q.w * q.w;
-	double sq_x = q.x * q.x;
-	double sq_y = q.y * q.y;
-	double sq_z = q.z * q.z;
+	mfloat_t sq_w = q.w * q.w;
+	mfloat_t sq_x = q.x * q.x;
+	mfloat_t sq_y = q.y * q.y;
+	mfloat_t sq_z = q.z * q.z;
 
 	ASSERT(!IS_NULL_QUAT(q));
 	if (psi != NULL) {
-		*psi = atan2(2.0 * (q.x * q.y + q.z * q.w),
+		*psi = atan2l(2.0 * (q.x * q.y + q.z * q.w),
 		    (sq_x - sq_y - sq_z + sq_w));
 	}
 	if (theta != NULL)
-		*theta = asin(-2.0 * (q.x * q.z - q.y * q.w));
+		*theta = asinl(-2.0 * (q.x * q.z - q.y * q.w));
 	if (phi != NULL) {
-		*phi = atan2(2.0 * (q.y * q.z + q.x * q.w),
+		*phi = atan2l(2.0 * (q.y * q.z + q.x * q.w),
 		    (-sq_x - sq_y + sq_z + sq_w));
 	}
 }
@@ -253,7 +255,7 @@ quat_to_euler(struct quat q, double *psi, double *theta, double *phi)
  * not populated.
  */
 void
-quat_to_euler_deg(struct quat q, double *psi, double *theta, double *phi)
+quat_to_euler_deg(struct quat q, mfloat_t *psi, mfloat_t *theta, mfloat_t *phi)
 {
 	quat_to_euler(q, psi, theta, phi);
 	if (psi != NULL)
@@ -289,7 +291,7 @@ quat_to_xp(struct quat q)
 void
 quat_print(struct quat q)
 {
-	printf(".w=%11f .x=%11f .y=%11f .z=%11f\n", q.w, q.x, q.y, q.z);
+	printf(".w=%11Lf .x=%11Lf .y=%11Lf .z=%11Lf\n", q.w, q.x, q.y, q.z);
 }
 
 /*
@@ -299,11 +301,11 @@ quat_print(struct quat q)
 void
 quat_print_euler(struct quat q)
 {
-	double psi, theta, phi;
+	mfloat_t psi, theta, phi;
 
 	ASSERT(!IS_NULL_QUAT(q));
 	quat_to_euler(q, &psi, &theta, &phi);
-	logMsg("psi: %f  theta: %f  phi: %f",
+	logMsg("psi: %Lf  theta: %Lf  phi: %Lf",
 	    RAD2DEG(psi), RAD2DEG(theta), RAD2DEG(phi));
 }
 
@@ -315,10 +317,10 @@ void
 quat_print_axis_angle(struct quat q)
 {
 	struct vec3 axis;
-	double angle;
+	mfloat_t angle;
 
 	ASSERT(!IS_NULL_QUAT(q));
 	quat_to_axis_angle(q, &axis, &angle);
-	logMsg("%11f %11f %11f %11f deg", axis.y, -axis.z, -axis.x,
+	logMsg("%11Lf %11Lf %11Lf %11Lf deg", axis.y, -axis.z, -axis.x,
 	    RAD2DEG(angle));
 }

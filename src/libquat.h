@@ -59,38 +59,51 @@ extern "C" {
 #define	NULL_QUAT		((struct quat){.v = {NAN, NAN, NAN, NAN}})
 
 struct quat quat_hamil_prod(struct quat p, struct quat q);
-struct quat quat_local2ecmigl(geo_pos2_t refpt, double ref_time);
-struct quat quat_ecmigl2local(geo_pos2_t refpt, double ref_time);
+struct quat quat_local2ecmigl(geo_pos2_t refpt, mfloat_t ref_time);
+struct quat quat_ecmigl2local(geo_pos2_t refpt, mfloat_t ref_time);
 struct quat quat_rot_rel(struct quat q1, struct quat q2);
 struct quat quat_rot_concat(struct quat from, struct quat delta);
-void quat_to_axis_angle(struct quat q, struct vec3 *axis, double *angle);
-void quat_to_axis_gl_angle(struct quat q, struct vec3 *axis, double *angle);
-struct quat quat_from_euler(double psi, double theta, double phi);
-struct quat quat_from_euler_deg(double psi, double theta, double phi);
-void quat_to_euler(struct quat q, double *psi, double *theta, double *phi);
-void quat_to_euler_deg(struct quat q, double *psi, double *theta, double *phi);
+void quat_to_axis_angle(struct quat q, struct vec3 *axis, mfloat_t *angle);
+void quat_to_axis_gl_angle(struct quat q, struct vec3 *axis, mfloat_t *angle);
+struct quat quat_from_euler(mfloat_t psi, mfloat_t theta, mfloat_t phi);
+struct quat quat_from_euler_deg(mfloat_t psi, mfloat_t theta, mfloat_t phi);
+void quat_to_euler(struct quat q, mfloat_t *psi, mfloat_t *theta,
+    mfloat_t *phi);
+void quat_to_euler_deg(struct quat q, mfloat_t *psi, mfloat_t *theta,
+    mfloat_t *phi);
 struct quat quat_from_xp(struct quat xp_q);
 struct quat quat_to_xp(struct quat q);
 
 #if	!defined(__cplusplus) || __cplusplus > 201703L
 /*
- * Converts a vect3_t in OpenGL space to a quaternion suitable for
+ * Converts a vect3l_t in OpenGL space to a quaternion suitable for
  * transformation using Hamilton products.
  */
 static inline struct quat
-quat_from_vect3_gl(vect3_t v)
+quat_from_vect3l_gl(vect3l_t v)
 {
 	return ((struct quat){ .x = -v.z, .y = v.x, .z = -v.y });
 }
 #endif	/* !defined(__cplusplus) || __cplusplus > 201703L */
 
 /*
- * Converts a quat back to a vect3_t in OpenGL space.
+ * Converts a quat back to a vect3l_t in OpenGL space.
  */
-static inline vect3_t
-quat_to_vect3_gl(struct quat q)
+static inline vect3l_t
+quat_to_vect3l_gl(struct quat q)
 {
-	return (VECT3(q.y, -q.z, -q.x));
+	return (VECT3L(q.y, -q.z, -q.x));
+}
+
+/*
+ * Converts a quat to a vect3l_t in North-East-Down orientation.
+ * In reality it just returns the XYZ components, since quaternions
+ * are already in NED notation.
+ */
+static inline vect3l_t
+quat_to_vect3l_NED(struct quat q)
+{
+	return (VECT3L(q.x, q.y, q.z));
 }
 
 void quat_print(struct quat q);
