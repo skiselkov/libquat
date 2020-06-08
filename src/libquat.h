@@ -110,6 +110,30 @@ void quat_print(struct quat q);
 void quat_print_euler(struct quat q);
 void quat_print_axis_angle(struct quat q);
 
+/*
+ * North-East-Down coordinates
+ */
+typedef struct {
+	mfloat_t N;
+	mfloat_t E;
+	mfloat_t D;
+} NED_t;
+
+static inline struct quat
+NED2quat(NED_t ned)
+{
+	return ((struct quat){{{ ned.N, ned.E, ned.D }}});
+}
+
+static inline NED_t
+quat2NED(struct quat q)
+{
+	return ((NED_t){ q.x, q.y, q.z });
+}
+
+#define	NULL_NED		((NED_t){NAN, NAN, NAN})
+#define	IS_NULL_NED(NED)	(isnan((NED).N))
+
 #ifdef __cplusplus
 }
 #endif
