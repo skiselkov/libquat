@@ -291,7 +291,12 @@ quat_to_xp(struct quat q)
 void
 quat_print(struct quat q)
 {
+#ifndef	__MINGW32__
 	printf(".w=%11Lf .x=%11Lf .y=%11Lf .z=%11Lf\n", q.w, q.x, q.y, q.z);
+#else	/* defined(__MINGW32__) */
+	printf(".w=%11f .x=%11f .y=%11f .z=%11f\n",
+	    (double)q.w, (double)q.x, (double)q.y, (double)q.z);
+#endif	/* defined(__MINGW32__) */
 }
 
 /*
@@ -305,8 +310,13 @@ quat_print_euler(struct quat q)
 
 	ASSERT(!IS_NULL_QUAT(q));
 	quat_to_euler(q, &psi, &theta, &phi);
+#ifndef	__MINGW32__
 	logMsg("psi: %Lf  theta: %Lf  phi: %Lf",
 	    RAD2DEG(psi), RAD2DEG(theta), RAD2DEG(phi));
+#else	/* defined(__MINGW32__) */
+	logMsg("psi: %f  theta: %f  phi: %f",
+	    (double)RAD2DEG(psi), (double)RAD2DEG(theta), (double)RAD2DEG(phi));
+#endif	/* defined(__MINGW32__) */
 }
 
 /*
@@ -321,6 +331,11 @@ quat_print_axis_angle(struct quat q)
 
 	ASSERT(!IS_NULL_QUAT(q));
 	quat_to_axis_angle(q, &axis, &angle);
+#ifndef	__MINGW32__
 	logMsg("%11Lf %11Lf %11Lf %11Lf deg", axis.y, -axis.z, -axis.x,
 	    RAD2DEG(angle));
+#else	/* defined(__MINGW32__) */
+	logMsg("%11f %11f %11f %11f deg", (double)axis.y, (double)-axis.z,
+	    (double)-axis.x, (double)RAD2DEG(angle));
+#endif	/* defined(__MINGW32__) */
 }
