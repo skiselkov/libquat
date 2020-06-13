@@ -56,7 +56,7 @@ extern "C" {
 #define	QUAT_AXIS_Z_GL		QUAT_VEC3(-1, 0, 0)
 
 #define	IS_NULL_QUAT(q)		(!isfinite((q).w))
-#define	NULL_QUAT		((struct quat){.v = {NAN, NAN, NAN, NAN}})
+#define	NULL_QUAT		((struct quat){{{NAN, NAN, NAN, NAN}}})
 
 struct quat quat_hamil_prod(struct quat p, struct quat q);
 struct quat quat_local2ecmigl(geo_pos2_t refpt, mfloat_t ref_time);
