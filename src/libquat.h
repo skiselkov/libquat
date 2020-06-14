@@ -58,21 +58,23 @@ extern "C" {
 #define	IS_NULL_QUAT(q)		(!isfinite((q).w))
 #define	NULL_QUAT		((struct quat){{{NAN, NAN, NAN, NAN}}})
 
-struct quat quat_hamil_prod(struct quat p, struct quat q);
-struct quat quat_local2ecmigl(geo_pos2_t refpt, mfloat_t ref_time);
-struct quat quat_ecmigl2local(geo_pos2_t refpt, mfloat_t ref_time);
-struct quat quat_rot_rel(struct quat q1, struct quat q2);
-struct quat quat_rot_concat(struct quat from, struct quat delta);
+struct quat quat_hamil_prod(struct quat p, struct quat q) PURE_ATTR;
+struct quat quat_local2ecmigl(geo_pos2_t refpt, mfloat_t ref_time) PURE_ATTR;
+struct quat quat_ecmigl2local(geo_pos2_t refpt, mfloat_t ref_time) PURE_ATTR;
+struct quat quat_rot_rel(struct quat q1, struct quat q2) PURE_ATTR;
+struct quat quat_rot_concat(struct quat from, struct quat delta) PURE_ATTR;
 void quat_to_axis_angle(struct quat q, struct vec3 *axis, mfloat_t *angle);
 void quat_to_axis_gl_angle(struct quat q, struct vec3 *axis, mfloat_t *angle);
-struct quat quat_from_euler(mfloat_t psi, mfloat_t theta, mfloat_t phi);
-struct quat quat_from_euler_deg(mfloat_t psi, mfloat_t theta, mfloat_t phi);
+struct quat quat_from_euler(mfloat_t psi, mfloat_t theta, mfloat_t phi)
+    PURE_ATTR;
+struct quat quat_from_euler_deg(mfloat_t psi, mfloat_t theta, mfloat_t phi)
+    PURE_ATTR;
 void quat_to_euler(struct quat q, mfloat_t *psi, mfloat_t *theta,
     mfloat_t *phi);
 void quat_to_euler_deg(struct quat q, mfloat_t *psi, mfloat_t *theta,
     mfloat_t *phi);
-struct quat quat_from_xp(struct quat xp_q);
-struct quat quat_to_xp(struct quat q);
+struct quat quat_from_xp(struct quat xp_q) PURE_ATTR;
+struct quat quat_to_xp(struct quat q) PURE_ATTR;
 
 #if	!defined(__cplusplus) || __cplusplus > 201703L
 /*
@@ -104,6 +106,20 @@ static inline vect3l_t
 quat_to_vect3l_NED(struct quat q)
 {
 	return (VECT3L(q.x, q.y, q.z));
+}
+
+/*
+ * Shorthand for quat_inverse that allows using the assignment notation
+ *	struct quat q = quat_inv(p);
+ * Instead of having to declare the quaternion ahead of time and then
+ * passing both quaternion vector fields by reference.
+ */
+static inline struct quat
+quat_inv(struct quat q)
+{
+	struct quat p;
+	quat_inverse(p.v, q.v);
+	return (p);
 }
 
 void quat_print(struct quat q);
