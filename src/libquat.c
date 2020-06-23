@@ -154,14 +154,16 @@ quat_rot_concat(struct quat from, struct quat delta)
 void
 quat_to_axis_angle(struct quat q, struct vec3 *axis, mfloat_t *angle)
 {
-	mfloat_t half = acosl(q.w);
-	mfloat_t s = sinl(half);
+	mfloat_t half, s;
 
 	ASSERT(!IS_NULL_QUAT(q));
+
+	half = acosl(q.w);
+	s = sinl(half);
 	/*
 	 * Zero roration quaternion has an arbitrary axis, so just pick one.
 	 */
-	if (s == 0) {
+	if (s == 0 || isnan(s)) {
 		if (axis != NULL)
 			*axis = QUAT_AXIS_X_GL;
 		if (angle != NULL)
