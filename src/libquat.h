@@ -76,7 +76,6 @@ void quat_to_euler_deg(struct quat q, mfloat_t *psi, mfloat_t *theta,
 struct quat quat_from_xp(struct quat xp_q) PURE_ATTR;
 struct quat quat_to_xp(struct quat q) PURE_ATTR;
 
-#if	!defined(__cplusplus) || __cplusplus > 201703L
 /*
  * Converts a vect3l_t in OpenGL space to a quaternion suitable for
  * transformation using Hamilton products.
@@ -84,9 +83,14 @@ struct quat quat_to_xp(struct quat q) PURE_ATTR;
 static inline struct quat
 quat_from_vect3l_gl(vect3l_t v)
 {
-	return ((struct quat){ .x = -v.z, .y = v.x, .z = -v.y });
+	struct quat q = {};
+
+	q.x = -v.z;
+	q.y = v.x;
+	q.z = -v.y;
+
+	return (q);
 }
-#endif	/* !defined(__cplusplus) || __cplusplus > 201703L */
 
 /*
  * Converts a quat back to a vect3l_t in OpenGL space.
